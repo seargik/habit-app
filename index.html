@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Life Tracker">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Life Tracker</title>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="top">
+        <div>
+          <h1>Life Tracker</h1>
+          <div class="small">public-safe app · private data stays on device</div>
+        </div>
+        <button id="helpBtn" class="btnBlue" type="button">?</button>
+      </div>
+
+      <div class="dateRow">
+        <button id="prevDay" type="button">‹</button>
+        <input id="dateInput" type="date">
+        <button id="nextDay" type="button">›</button>
+      </div>
+
+      <nav class="tabs" aria-label="Main tabs">
+        <button type="button" data-tab="today" class="active">Today</button>
+        <button type="button" data-tab="progress">Progress</button>
+        <button type="button" data-tab="export">Export</button>
+        <button type="button" data-tab="settings">Settings</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="tab-today">
+        <div class="card">
+          <div class="sectionTitle">
+            <h2>Day</h2>
+            <span id="dayScorePill" class="pill">0%</span>
+          </div>
+
+          <div class="metrics">
+            <div class="metricBox">
+              <label for="sleep">Sleep</label>
+              <input id="sleep" type="number" inputmode="decimal" min="0" max="16" step="0.5" placeholder="7.5">
+            </div>
+            <div class="metricBox">
+              <label for="energy">Energy 1–5</label>
+              <input id="energy" type="number" inputmode="numeric" min="1" max="5" placeholder="3">
+            </div>
+            <div class="metricBox">
+              <label for="stress">Stress 1–5</label>
+              <input id="stress" type="number" inputmode="numeric" min="1" max="5" placeholder="3">
+            </div>
+            <div class="metricBox">
+              <label for="body">Metric</label>
+              <input id="body" type="text" placeholder="optional">
+            </div>
+          </div>
+
+          <label for="dayNote">Day note</label>
+          <textarea id="dayNote" placeholder="Short note for later analysis"></textarea>
+        </div>
+
+        <div class="card">
+          <div class="sectionTitle">
+            <h2>Checklist</h2>
+            <button id="badDayBtn" class="btnWarn" type="button">Bad day</button>
+          </div>
+          <div class="hint">Done = full action. Min = minimum version. Skip = planned skip. Fail = not done.</div>
+          <div id="habits"></div>
+          <div class="sep"></div>
+          <button id="saveBtn" class="btnGood fullWidth" type="button">Save day</button>
+          <div id="saveStatus" class="hint topSpace"></div>
+        </div>
+      </section>
+
+      <section id="tab-progress" class="hidden">
+        <div class="card">
+          <div class="sectionTitle">
+            <h2>Last 7 days</h2>
+            <button id="refreshProgress" type="button">Refresh</button>
+          </div>
+
+          <div class="summary">
+            <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">done</div></div>
+            <div class="stat"><div class="num" id="statMin">0</div><div class="lbl">min</div></div>
+            <div class="stat"><div class="num" id="statFail">0</div><div class="lbl">fail</div></div>
+            <div class="stat"><div class="num" id="statRate">0%</div><div class="lbl">score</div></div>
+          </div>
+
+          <div id="habitProgress"></div>
+        </div>
+
+        <div class="card">
+          <h2>Auto-insights</h2>
+          <div id="autoInsights" class="hint"></div>
+        </div>
+      </section>
+
+      <section id="tab-export" class="hidden">
+        <div class="grid grid2">
+          <div class="card">
+            <h2>Export / backup</h2>
+            <p class="hint">Full JSON contains your private checklist, comments and progress. Keep it private.</p>
+            <div class="footerBtns">
+              <button id="exportJson" class="btnGood" type="button">Full JSON</button>
+              <button id="exportCsv" class="btnBlue" type="button">CSV</button>
+            </div>
+            <div class="sep"></div>
+            <button id="exportConfig" class="fullWidth" type="button">Config only JSON</button>
+            <p class="hint">Config only = checklist/settings, without daily comments.</p>
+          </div>
+
+          <div class="card">
+            <h2>Import JSON file</h2>
+            <p class="hint">Import full backup JSON or config-only JSON.</p>
+            <input id="importFile" class="fileInput" type="file" accept=".json,application/json">
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Import by paste</h2>
+          <p class="hint">On iPhone you can copy JSON text and paste it here. Useful after update or reinstall.</p>
+          <textarea id="pasteImport" class="mono" placeholder="Paste JSON here, then press Import pasted JSON"></textarea>
+          <div class="footerBtns topSpace">
+            <button id="importPasted" class="btnGood" type="button">Import pasted JSON</button>
+            <button id="clearPaste" type="button">Clear</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Prompt for ChatGPT analysis</h2>
+          <textarea readonly class="promptBox">Analyze my Life Tracker JSON:
+1) what works and what fails;
+2) connection between sleep/stress/energy and execution;
+3) improve the habit system using: obvious, attractive, easy, satisfying;
+4) propose next week's checklist;
+5) propose improvements to this app.</textarea>
+        </div>
+      </section>
+
+      <section id="tab-settings" class="hidden">
+        <div class="card">
+          <div class="sectionTitle">
+            <h2>Checklist settings</h2>
+            <button id="addHabit" class="btnGood" type="button">+ Add</button>
+          </div>
+
+          <div id="settingsList" class="settingsList"></div>
+
+          <div class="sep"></div>
+          <div class="footerBtns">
+            <button id="resetDefaults" class="btnBad" type="button">Reset public defaults</button>
+            <button id="forceUpdate" class="btnWarn" type="button">Reload app update</button>
+          </div>
+          <p class="hint">Before update: Export → Full JSON. Same URL/domain should keep local data.</p>
+        </div>
+
+        <div class="card">
+          <h2>Privacy rule</h2>
+          <div class="quote">Public GitHub = app code only. Private checklist/progress = local phone storage + exported JSON.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="helpModal" class="modal hidden">
+    <div class="modalContent">
+      <div class="top">
+        <h2>How to use</h2>
+        <button id="closeHelp" type="button">Close</button>
+      </div>
+      <ol>
+        <li>Upload this public-safe app to GitHub Pages.</li>
+        <li>Open it on iPhone in Safari and Add to Home Screen.</li>
+        <li>Edit your private checklist inside the app on the phone.</li>
+        <li>Export full JSON weekly as backup and for ChatGPT analysis.</li>
+        <li>If app code is updated, keep the same URL and press Settings → Reload app update.</li>
+      </ol>
+      <div class="quote">Not perfect. Not heroic. Do not miss twice.</div>
+    </div>
+  </div>
+
+  <script src="./app.js?v=3" defer></script>
+</body>
+</html>
