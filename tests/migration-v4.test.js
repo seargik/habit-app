@@ -82,4 +82,23 @@ assert.throws(
   "wrong source version must be rejected rather than silently rewritten"
 );
 
+class MemoryStorage {
+  constructor(initial = {}) { this.map = new Map(Object.entries(initial)); }
+  getItem(key) { return this.map.has(key) ? this.map.get(key) : null; }
+  setItem(key, value) { this.map.set(key, String(value)); }
+}
+
+const exactV3StorageString = JSON.stringify(v3);
+const storage = new MemoryStorage({ "lifeTrackerData.v3": exactV3StorageString });
+const firstLoad = model.loadOrMigrateStorage(storage);
+assert.equal(storage.getItem("lifeTrackerData.v3"), exactV3StorageString, "phone v3 storage must remain byte-for-byte unchanged");
+assert.ok(storage.getItem("lifeTrackerData.v4"), "new v4 key must be created");
+assert.deepEqual(firstLoad.entries, v3.entries, "storage migration must preserve all entries");
+
+const v4AfterFirstLoad = storage.getItem("lifeTrackerData.v4");
+const secondLoad = model.loadOrMigrateStorage(storage);
+assert.equal(storage.getItem("lifeTrackerData.v4"), v4AfterFirstLoad, "second load must not remigrate/rewrite v4");
+assert.equal(storage.getItem("lifeTrackerData.v3"), exactV3StorageString, "second load must still leave v3 untouched");
+assert.deepEqual(secondLoad.entries, v3.entries);
+
 console.log("migration-v4 tests: PASS");
