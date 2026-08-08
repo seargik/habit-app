@@ -218,6 +218,38 @@
     return safe;
   }
 
+  function loadOrMigrateStorage(storage) {
+    if (!storage || typeof storage.getItem !== "function" || typeof storage.setItem !== "function") {
+      throw new Error("A localStorage-compatible storage object is required");
+    }
+
+    const v4Raw = storage.getItem("lifeTrackerData.v4");
+    if (v4Raw) {
+      const parsed = JSON.parse(v4Raw);
+      if (Number(parsed.version) !== SCHEMA_VERSION) {
+        throw new Error(`Stored v4 key contains schema version ${parsed.version}`);
+      }
+      return normalizeV4(parsed);
+    }
+
+    const v3Raw = storage.getItem("lifeTrackerData.v3");
+    if (!v3Raw) return null;
+
+    const source = JSON.parse(v3Raw);
+    const migrated = migrateV3ToV4(source);
+    verifyHistoryPreserved(source, migrated);
+
+    // Critical safety rule: never mutate/remove the v3 key during migration.
+    // Write v4 only after transformation + history verification succeeds.
+    storage.setItem("lifeTrackerData.v4", JSON.stringify(migrated));
+
+    if (storage.getItem("lifeTrackerData.v3") !== v3Raw) {
+      throw new Error("Migration safety check failed: v3 storage changed");
+    }
+
+    return migrated;
+  }
+
   function isDefinitionValidOn(definition, date) {
     if (!definition || !isIsoDate(date)) return false;
     if (definition.active === false) return false;
@@ -262,6 +294,7 @@
     migrateV3ToV4,
     normalizeV4,
     verifyHistoryPreserved,
+    loadOrMigrateStorage,
     definitionsForDate,
     definitionsForSettings,
     isDefinitionValidOn
