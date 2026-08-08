@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Life Tracker">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icon-192.png">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=4">
   <title>Life Tracker</title>
 </head>
 <body>
@@ -18,7 +18,7 @@
       <div class="top">
         <div>
           <h1>Life Tracker</h1>
-          <div class="small">public-safe app · private data stays on device</div>
+          <div class="small">local-first · private data stays on this device</div>
         </div>
         <button id="helpBtn" class="btnBlue" type="button">?</button>
       </div>
@@ -42,10 +42,14 @@
         <div class="card">
           <div class="sectionTitle">
             <h2>Day</h2>
-            <span id="dayScorePill" class="pill">0%</span>
+            <span id="dayScorePill" class="pill">0 done</span>
           </div>
 
           <div class="metrics">
+            <div class="metricBox metricPrimary">
+              <label for="general">General 0–10</label>
+              <input id="general" type="number" inputmode="decimal" min="0" max="10" step="0.1" placeholder="7.5">
+            </div>
             <div class="metricBox">
               <label for="sleep">Sleep</label>
               <input id="sleep" type="number" inputmode="decimal" min="0" max="16" step="0.5" placeholder="7.5">
@@ -59,21 +63,21 @@
               <input id="stress" type="number" inputmode="numeric" min="1" max="5" placeholder="3">
             </div>
             <div class="metricBox">
-              <label for="body">Metric</label>
+              <label for="body">Body / metric</label>
               <input id="body" type="text" placeholder="optional">
             </div>
           </div>
 
           <label for="dayNote">Day note</label>
-          <textarea id="dayNote" placeholder="Short note for later analysis"></textarea>
+          <textarea id="dayNote" placeholder="Narrative note for the whole day"></textarea>
         </div>
 
         <div class="card">
           <div class="sectionTitle">
-            <h2>Checklist</h2>
+            <h2>Life categories</h2>
             <button id="badDayBtn" class="btnWarn" type="button">Bad day</button>
           </div>
-          <div class="hint">Done = full action. Min = minimum version. Skip = planned skip. Fail = not done.</div>
+          <div class="hint">Done = strong version. Min = meaningful minimum. Skip = consciously not applicable. Fail = went against the intended direction.</div>
           <div id="habits"></div>
           <div class="sep"></div>
           <button id="saveBtn" class="btnGood fullWidth" type="button">Save day</button>
@@ -87,82 +91,61 @@
             <h2>Last 7 days</h2>
             <button id="refreshProgress" type="button">Refresh</button>
           </div>
-
           <div class="summary">
             <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">done</div></div>
             <div class="stat"><div class="num" id="statMin">0</div><div class="lbl">min</div></div>
             <div class="stat"><div class="num" id="statFail">0</div><div class="lbl">fail</div></div>
-            <div class="stat"><div class="num" id="statRate">0%</div><div class="lbl">score</div></div>
+            <div class="stat"><div class="num" id="statRate">0</div><div class="lbl">skip</div></div>
           </div>
-
           <div id="habitProgress"></div>
         </div>
-
-        <div class="card">
-          <h2>Auto-insights</h2>
-          <div id="autoInsights" class="hint"></div>
-        </div>
+        <div class="card"><h2>Auto-insights</h2><div id="autoInsights" class="hint"></div></div>
       </section>
 
       <section id="tab-export" class="hidden">
         <div class="grid grid2">
           <div class="card">
             <h2>Export / backup</h2>
-            <p class="hint">Full JSON contains your private checklist, comments and progress. Keep it private.</p>
+            <p class="hint">Full JSON contains your private definitions, comments, notes and progress. Keep it private.</p>
             <div class="footerBtns">
               <button id="exportJson" class="btnGood" type="button">Full JSON</button>
               <button id="exportCsv" class="btnBlue" type="button">CSV</button>
             </div>
             <div class="sep"></div>
             <button id="exportConfig" class="fullWidth" type="button">Config only JSON</button>
-            <p class="hint">Config only = checklist/settings, without daily comments.</p>
           </div>
-
           <div class="card">
             <h2>Import JSON file</h2>
-            <p class="hint">Import full backup JSON or config-only JSON.</p>
+            <p class="hint">Imports legacy v3 full JSON or current v4 JSON. The migration never deletes the original phone v3 storage key.</p>
             <input id="importFile" class="fileInput" type="file" accept=".json,application/json">
           </div>
         </div>
-
         <div class="card">
           <h2>Import by paste</h2>
-          <p class="hint">On iPhone you can copy JSON text and paste it here. Useful after update or reinstall.</p>
           <textarea id="pasteImport" class="mono" placeholder="Paste JSON here, then press Import pasted JSON"></textarea>
           <div class="footerBtns topSpace">
             <button id="importPasted" class="btnGood" type="button">Import pasted JSON</button>
             <button id="clearPaste" type="button">Clear</button>
           </div>
         </div>
-
         <div class="card">
-          <h2>Prompt for ChatGPT analysis</h2>
-          <textarea readonly class="promptBox">Analyze my Life Tracker JSON:
-1) what works and what fails;
-2) connection between sleep/stress/energy and execution;
-3) improve the habit system using: obvious, attractive, easy, satisfying;
-4) propose next week's checklist;
-5) propose improvements to this app.</textarea>
+          <h2>Migration safety</h2>
+          <div class="quote">v4 uses a separate localStorage key. Existing lifeTrackerData.v3 remains untouched as rollback data after the first v4 migration.</div>
         </div>
       </section>
 
       <section id="tab-settings" class="hidden">
         <div class="card">
-          <div class="sectionTitle">
-            <h2>Checklist settings</h2>
-            <button id="addHabit" class="btnGood" type="button">+ Add</button>
-          </div>
-
+          <div class="sectionTitle"><h2>Category definitions</h2><button id="addHabit" class="btnGood" type="button">+ Add</button></div>
+          <p class="hint">Definitions are dated. Current definitions are shown first; older definitions remain for historical dates. Start/end dates are under “Validity / history settings”.</p>
           <div id="settingsList" class="settingsList"></div>
-
           <div class="sep"></div>
           <div class="footerBtns">
-            <button id="resetDefaults" class="btnBad" type="button">Reset public defaults</button>
+            <button id="resetDefaults" class="btnBad" type="button">Reset current v4 defaults</button>
             <button id="forceUpdate" class="btnWarn" type="button">Reload app update</button>
           </div>
-          <p class="hint">Before update: Export → Full JSON. Same URL/domain should keep local data.</p>
+          <p class="hint">Before a production update: Export → Full JSON. Same URL/domain keeps browser storage, and v4 additionally preserves the old v3 key.</p>
         </div>
-
         <div class="card">
           <h2>Privacy rule</h2>
           <div class="quote">Public GitHub = app code only. Private checklist/progress = local phone storage + exported JSON.</div>
@@ -173,21 +156,31 @@
 
   <div id="helpModal" class="modal hidden">
     <div class="modalContent">
-      <div class="top">
-        <h2>How to use</h2>
-        <button id="closeHelp" type="button">Close</button>
-      </div>
+      <div class="top"><h2>How to use</h2><button id="closeHelp" type="button">Close</button></div>
       <ol>
-        <li>Upload this public-safe app to GitHub Pages.</li>
-        <li>Open it on iPhone in Safari and Add to Home Screen.</li>
-        <li>Edit your private checklist inside the app on the phone.</li>
-        <li>Export full JSON weekly as backup and for ChatGPT analysis.</li>
-        <li>If app code is updated, keep the same URL and press Settings → Reload app update.</li>
+        <li>Keep the same GitHub Pages URL when updating.</li>
+        <li>Export Full JSON before a production update.</li>
+        <li>Old dates use their historical definitions; current dates use the v4 definitions.</li>
+        <li>Use ⓘ / 📝 on a category for its definition, persistent context and extended daily note.</li>
       </ol>
-      <div class="quote">Not perfect. Not heroic. Do not miss twice.</div>
     </div>
   </div>
 
-  <script src="./app.js?v=3" defer></script>
+  <div id="habitDetailModal" class="modal hidden">
+    <div class="modalContent">
+      <div class="top"><div><h2 id="habitDetailTitle">Category</h2><div id="habitDetailDate" class="small"></div></div><button id="closeHabitDetail" type="button">Close</button></div>
+      <p id="habitDetailDescription" class="hint"></p>
+      <label>MIN</label><div id="habitDetailMin" class="quote"></div>
+      <label>DONE</label><div id="habitDetailDone" class="quote"></div>
+      <label for="habitContextNotes">Persistent topic Notes / Context</label>
+      <textarea id="habitContextNotes" placeholder="Principles, strategy, reference notes, checklists..."></textarea>
+      <label for="habitDailyNotes">Extended note for this day</label>
+      <textarea id="habitDailyNotes" placeholder="Longer detail for this specific date..."></textarea>
+      <button id="saveHabitDetail" class="btnGood fullWidth topSpace" type="button">Save notes</button>
+    </div>
+  </div>
+
+  <script src="./migration-v4.js?v=4" defer></script>
+  <script src="./app-v4.js?v=4" defer></script>
 </body>
 </html>
