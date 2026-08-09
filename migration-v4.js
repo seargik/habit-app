@@ -148,10 +148,11 @@
     };
   }
 
-  function currentDefinition(habit) {
+  function currentDefinition(habit, inheritedContextNotes = "") {
     return {
       ...clone(habit),
       min: habit.min || habit.minDescription || "",
+      contextNotes: habit.contextNotes || inheritedContextNotes || "",
       definitionSetId: "life_v4",
       startDate: EFFECTIVE_DATE,
       endDate: null
@@ -178,6 +179,10 @@
     const legacyHabits = Array.isArray(sourceCopy.habits) ? sourceCopy.habits : [];
     const createdDate = typeof sourceCopy.createdAt === "string" ? sourceCopy.createdAt.slice(0, 10) : null;
     const legacyStartDate = firstEntryDate(entries, createdDate);
+    const legacySon = legacyHabits.find((habit) => habit && habit.id === "son_quality_time");
+    const inheritedSonContext = legacySon
+      ? String(legacySon.contextNotes || legacySon.minDescription || legacySon.min || "")
+      : "";
 
     const migrated = {
       ...sourceCopy,
@@ -185,7 +190,10 @@
       appVersion: APP_VERSION,
       habits: [
         ...legacyHabits.map((habit, index) => legacyDefinition(habit, index, legacyStartDate)),
-        ...NEW_HABITS.map(currentDefinition)
+        ...NEW_HABITS.map((habit) => currentDefinition(
+          habit,
+          habit.id === "son_connection" ? inheritedSonContext : ""
+        ))
       ],
       settings: {
         ...(sourceCopy.settings && typeof sourceCopy.settings === "object" ? sourceCopy.settings : {}),
@@ -239,8 +247,6 @@
     const migrated = migrateV3ToV4(source);
     verifyHistoryPreserved(source, migrated);
 
-    // Critical safety rule: never mutate/remove the v3 key during migration.
-    // Write v4 only after transformation + history verification succeeds.
     storage.setItem("lifeTrackerData.v4", JSON.stringify(migrated));
 
     if (storage.getItem("lifeTrackerData.v3") !== v3Raw) {
