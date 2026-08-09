@@ -89,27 +89,35 @@
       || null;
   }
 
+  function emptyEntry(date) {
+    return { date, metrics: {}, habits: {}, dayNote: "", updatedAt: null };
+  }
+
+  function getEntry(date, create = false) {
+    const existing = data.entries?.[date];
+    if (existing) return existing;
+    if (!create) return emptyEntry(date);
+    const entry = emptyEntry(date);
+    if (!data.entries || typeof data.entries !== "object") data.entries = {};
+    data.entries[date] = entry;
+    return entry;
+  }
+
+  function readHabitRecord(entry, habitId) {
+    const item = entry?.habits?.[habitId];
+    return item && typeof item === "object" ? item : { status: "", comment: "", notes: "" };
+  }
+
   function ensureHabitRecord(entry, habitId) {
-    if (!entry.habits[habitId]) entry.habits[habitId] = { status: "", comment: "", notes: "" };
-    if (entry.habits[habitId].notes == null) entry.habits[habitId].notes = "";
-    if (entry.habits[habitId].comment == null) entry.habits[habitId].comment = "";
-    if (entry.habits[habitId].status == null) entry.habits[habitId].status = "";
+    if (!entry.habits || typeof entry.habits !== "object") entry.habits = {};
+    if (!entry.habits[habitId] || typeof entry.habits[habitId] !== "object") {
+      entry.habits[habitId] = { status: "", comment: "" };
+    }
     return entry.habits[habitId];
   }
 
-  function getEntry(date) {
-    if (!data.entries[date]) {
-      data.entries[date] = { date, metrics: {}, habits: {}, dayNote: "", updatedAt: null };
-    }
-    const entry = data.entries[date];
-    entry.metrics = entry.metrics || {};
-    entry.habits = entry.habits || {};
-    entry.dayNote = entry.dayNote || "";
-
-    // Only definitions valid for this date are initialized.
-    // Unknown/old keys already present in history are never deleted.
-    for (const habit of definitionsForDate(date)) ensureHabitRecord(entry, habit.id);
-    return entry;
+  function normalizedText(value) {
+    return value == null ? "" : String(value);
   }
 
   function setDate(date) {
@@ -119,39 +127,69 @@
     renderToday();
   }
 
-  function saveCurrentFromUI(showStatus = true) {
-    const entry = getEntry(currentDate);
-    entry.metrics.general = $("general")?.value || "";
-    entry.metrics.sleep = $("sleep")?.value || "";
-    entry.metrics.energy = $("energy")?.value || "";
-    entry.metrics.stress = $("stress")?.value || "";
-    entry.metrics.body = $("body")?.value || "";
-    entry.dayNote = $("dayNote")?.value || "";
+  function saveCurrentFromUI(showStatus = true, forceChanged = false) {
+    const existing = data.entries?.[currentDate] || null;
+    const view = existing || emptyEntry(currentDate);
+    const proposedMetrics = {
+      general: $("general")?.value || "",
+      sleep: $("sleep")?.value || "",
+      energy: $("energy")?.value || "",
+      stress: $("stress")?.value || "",
+      body: $("body")?.value || ""
+    };
+    const proposedDayNote = $("dayNote")?.value || "";
+    const commentChanges = [];
+    const metricChanges = [];
+
+    Object.entries(proposedMetrics).forEach(([key, value]) => {
+      const oldValue = normalizedText(view.metrics?.[key]);
+      if (oldValue !== value) metricChanges.push([key, value]);
+    });
 
     for (const habit of definitionsForDate(currentDate)) {
-      const item = ensureHabitRecord(entry, habit.id);
       const el = $("comment-" + habit.id);
-      if (el) item.comment = el.value || "";
+      if (!el) continue;
+      const oldValue = normalizedText(view.habits?.[habit.id]?.comment);
+      const nextValue = el.value || "";
+      if (oldValue !== nextValue) commentChanges.push([habit.id, nextValue]);
     }
 
-    entry.updatedAt = new Date().toISOString();
-    persist();
+    const dayNoteChanged = normalizedText(view.dayNote) !== proposedDayNote;
+    const changed = forceChanged || metricChanges.length > 0 || commentChanges.length > 0 || dayNoteChanged;
+
+    if (changed) {
+      const entry = getEntry(currentDate, true);
+      if (!entry.metrics || typeof entry.metrics !== "object") entry.metrics = {};
+
+      metricChanges.forEach(([key, value]) => { entry.metrics[key] = value; });
+      commentChanges.forEach(([habitId, value]) => {
+        ensureHabitRecord(entry, habitId).comment = value;
+      });
+      if (dayNoteChanged) entry.dayNote = proposedDayNote;
+
+      entry.updatedAt = new Date().toISOString();
+      persist();
+    }
+
     renderScore();
     if (showStatus && $("saveStatus")) {
-      $("saveStatus").textContent = "Saved: " + new Date().toLocaleTimeString();
+      $("saveStatus").textContent = changed
+        ? "Saved: " + new Date().toLocaleTimeString()
+        : "No changes";
     }
+    return changed;
   }
 
   function renderMetrics(entry) {
-    $("general").value = entry.metrics.general ?? "";
-    $("sleep").value = entry.metrics.sleep ?? "";
-    $("energy").value = entry.metrics.energy ?? "";
-    $("stress").value = entry.metrics.stress ?? "";
-    $("body").value = entry.metrics.body ?? "";
+    $("general").value = entry.metrics?.general ?? "";
+    $("sleep").value = entry.metrics?.sleep ?? "";
+    $("energy").value = entry.metrics?.energy ?? "";
+    $("stress").value = entry.metrics?.stress ?? "";
+    $("body").value = entry.metrics?.body ?? "";
   }
 
   function renderToday() {
-    const entry = getEntry(currentDate);
+    const entry = getEntry(currentDate, false);
     renderMetrics(entry);
     $("dayNote").value = entry.dayNote || "";
 
@@ -160,7 +198,7 @@
     container.innerHTML = "";
 
     habits.forEach((habit, index) => {
-      const item = ensureHabitRecord(entry, habit.id);
+      const item = readHabitRecord(entry, habit.id);
       const status = item.status || "";
       const hasNotes = Boolean(item.notes || habit.contextNotes);
       const minText = habit.minDescription || habit.min || "Minimum";
@@ -186,11 +224,11 @@
 
     $$("button[data-habit]", container).forEach((btn) => {
       btn.addEventListener("click", () => {
-        const e = getEntry(currentDate);
+        const e = getEntry(currentDate, true);
         const item = ensureHabitRecord(e, btn.dataset.habit);
         const nextStatus = btn.dataset.status;
         item.status = item.status === nextStatus ? "" : nextStatus;
-        saveCurrentFromUI(false);
+        saveCurrentFromUI(false, true);
         renderToday();
       });
     });
@@ -213,7 +251,7 @@
   }
 
   function renderScore() {
-    const entry = getEntry(currentDate);
+    const entry = getEntry(currentDate, false);
     const s = statusSummary(entry, currentDate);
     const general = entry.metrics?.general;
     $("dayScorePill").textContent = general !== "" && general != null
@@ -280,8 +318,8 @@
     saveCurrentFromUI(false);
     const habit = getDefinition(habitId, currentDate);
     if (!habit) return;
-    const entry = getEntry(currentDate);
-    const item = ensureHabitRecord(entry, habitId);
+    const entry = getEntry(currentDate, false);
+    const item = readHabitRecord(entry, habitId);
     openHabitId = habitId;
 
     $("habitDetailTitle").textContent = habit.name;
@@ -297,12 +335,23 @@
   function saveHabitDetails() {
     if (!openHabitId) return;
     const habit = getDefinition(openHabitId, currentDate);
-    const entry = getEntry(currentDate);
     if (!habit) return;
-    habit.contextNotes = $("habitContextNotes").value || "";
-    ensureHabitRecord(entry, openHabitId).notes = $("habitDailyNotes").value || "";
-    entry.updatedAt = new Date().toISOString();
-    persist();
+
+    const existingEntry = getEntry(currentDate, false);
+    const existingItem = readHabitRecord(existingEntry, openHabitId);
+    const nextContextNotes = $("habitContextNotes").value || "";
+    const nextDailyNotes = $("habitDailyNotes").value || "";
+    const contextChanged = normalizedText(habit.contextNotes) !== nextContextNotes;
+    const dailyChanged = normalizedText(existingItem.notes) !== nextDailyNotes;
+
+    if (contextChanged) habit.contextNotes = nextContextNotes;
+    if (dailyChanged) {
+      const entry = getEntry(currentDate, true);
+      ensureHabitRecord(entry, openHabitId).notes = nextDailyNotes;
+      entry.updatedAt = new Date().toISOString();
+    }
+    if (contextChanged || dailyChanged) persist();
+
     $("habitDetailModal").classList.add("hidden");
     openHabitId = null;
     renderToday();
@@ -592,12 +641,16 @@
 
     $("badDayBtn").addEventListener("click", () => {
       if (!confirm("Set all empty current-date categories to Min?")) return;
-      const entry = getEntry(currentDate);
+      let changed = false;
+      let entry = data.entries?.[currentDate] || null;
       definitionsForDate(currentDate).forEach((habit) => {
-        const item = ensureHabitRecord(entry, habit.id);
-        if (!item.status) item.status = "min";
+        const existingStatus = entry?.habits?.[habit.id]?.status || "";
+        if (existingStatus) return;
+        if (!entry) entry = getEntry(currentDate, true);
+        ensureHabitRecord(entry, habit.id).status = "min";
+        changed = true;
       });
-      saveCurrentFromUI(false);
+      if (changed) saveCurrentFromUI(false, true);
       renderToday();
     });
 
