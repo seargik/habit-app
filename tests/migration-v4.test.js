@@ -52,6 +52,9 @@ assert.deepEqual(oldDate.map((h) => h.id), ["trading_discipline", "son_quality_t
 assert.ok(oldDate.every((h) => h.startDate === "2026-05-15"));
 assert.ok(oldDate.every((h) => h.endDate === "2026-08-07"));
 
+const legacySon = migrated.habits.find((h) => h.id === "son_quality_time" && h.definitionSetId === "legacy_v3");
+assert.equal(legacySon.min, "legacy fatherhood text", "legacy fatherhood text must remain unchanged");
+
 const cutoverDate = model.definitionsForDate(migrated, "2026-08-08");
 assert.equal(cutoverDate.length, 10);
 assert.deepEqual(cutoverDate.map((h) => h.id), [
@@ -68,6 +71,9 @@ assert.deepEqual(cutoverDate.map((h) => h.id), [
 ]);
 assert.equal(cutoverDate.some((h) => h.id === "trading_discipline"), false);
 assert.equal(migrated.entries["2026-08-08"].habits.trading_discipline.status, "", "old raw keys remain untouched on cutover day");
+
+const newSon = cutoverDate.find((h) => h.id === "son_connection");
+assert.equal(newSon.contextNotes, "legacy fatherhood text", "fatherhood context must be inherited into the new persistent Son notes");
 
 const settings = model.definitionsForSettings(migrated, "2026-08-08");
 assert.ok(settings.slice(0, 10).every((h) => h.definitionSetId === "life_v4"), "currently valid definitions come first in settings");
