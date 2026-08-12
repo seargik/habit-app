@@ -1,9 +1,10 @@
-const CACHE = "life-tracker-v4-phase1b";
+const CACHE = "life-tracker-v4-phase1c";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css?v=4",
   "./migration-v4.js?v=4",
+  "./legacy-carryover-v4.js?v=4",
   "./general-guard-v4.js?v=4",
   "./app-v4.js?v=4",
   "./manifest.webmanifest",
