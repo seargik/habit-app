@@ -1,4 +1,4 @@
-const CACHE = "life-tracker-v4-phase1c";
+const CACHE = "life-tracker-v4-phase1d";
 const ASSETS = [
   "./",
   "./index.html",
@@ -6,6 +6,7 @@ const ASSETS = [
   "./migration-v4.js?v=4",
   "./legacy-carryover-v4.js?v=4",
   "./general-guard-v4.js?v=4",
+  "./metric-visibility-v4.js?v=4",
   "./app-v4.js?v=4",
   "./manifest.webmanifest",
   "./icon-192.png",
