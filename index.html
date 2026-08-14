@@ -2,192 +2,118 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
+  <meta name="life-tracker-build" content="16">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#111827">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Life Tracker">
-  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="manifest" href="./manifest.webmanifest?v=16">
   <link rel="apple-touch-icon" href="./icon-192.png">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=16">
+  <link rel="stylesheet" href="./daybook-v4.css?v=16">
   <title>Life Tracker</title>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="top">
-        <div>
-          <h1>Life Tracker</h1>
-          <div class="small">public-safe app · private data stays on device</div>
-        </div>
-        <button id="helpBtn" class="btnBlue" type="button">?</button>
-      </div>
-
-      <div class="dateRow">
-        <button id="prevDay" type="button">‹</button>
-        <input id="dateInput" type="date">
-        <button id="nextDay" type="button">›</button>
-      </div>
-
-      <nav class="tabs" aria-label="Main tabs">
-        <button type="button" data-tab="today" class="active">Today</button>
-        <button type="button" data-tab="progress">Progress</button>
-        <button type="button" data-tab="export">Export</button>
-        <button type="button" data-tab="settings">Settings</button>
-      </nav>
-    </header>
-
-    <main>
-      <section id="tab-today">
-        <div class="card">
-          <div class="sectionTitle">
-            <h2>Day</h2>
-            <span id="dayScorePill" class="pill">0%</span>
-          </div>
-
-          <div class="metrics">
-            <div class="metricBox">
-              <label for="sleep">Sleep</label>
-              <input id="sleep" type="number" inputmode="decimal" min="0" max="16" step="0.5" placeholder="7.5">
-            </div>
-            <div class="metricBox">
-              <label for="energy">Energy 1–5</label>
-              <input id="energy" type="number" inputmode="numeric" min="1" max="5" placeholder="3">
-            </div>
-            <div class="metricBox">
-              <label for="stress">Stress 1–5</label>
-              <input id="stress" type="number" inputmode="numeric" min="1" max="5" placeholder="3">
-            </div>
-            <div class="metricBox">
-              <label for="body">Metric</label>
-              <input id="body" type="text" placeholder="optional">
-            </div>
-          </div>
-
-          <label for="dayNote">Day note</label>
-          <textarea id="dayNote" placeholder="Short note for later analysis"></textarea>
-        </div>
-
-        <div class="card">
-          <div class="sectionTitle">
-            <h2>Checklist</h2>
-            <button id="badDayBtn" class="btnWarn" type="button">Bad day</button>
-          </div>
-          <div class="hint">Done = full action. Min = minimum version. Skip = planned skip. Fail = not done.</div>
-          <div id="habits"></div>
-          <div class="sep"></div>
-          <button id="saveBtn" class="btnGood fullWidth" type="button">Save day</button>
-          <div id="saveStatus" class="hint topSpace"></div>
-        </div>
-      </section>
-
-      <section id="tab-progress" class="hidden">
-        <div class="card">
-          <div class="sectionTitle">
-            <h2>Last 7 days</h2>
-            <button id="refreshProgress" type="button">Refresh</button>
-          </div>
-
-          <div class="summary">
-            <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">done</div></div>
-            <div class="stat"><div class="num" id="statMin">0</div><div class="lbl">min</div></div>
-            <div class="stat"><div class="num" id="statFail">0</div><div class="lbl">fail</div></div>
-            <div class="stat"><div class="num" id="statRate">0%</div><div class="lbl">score</div></div>
-          </div>
-
-          <div id="habitProgress"></div>
-        </div>
-
-        <div class="card">
-          <h2>Auto-insights</h2>
-          <div id="autoInsights" class="hint"></div>
-        </div>
-      </section>
-
-      <section id="tab-export" class="hidden">
-        <div class="grid grid2">
-          <div class="card">
-            <h2>Export / backup</h2>
-            <p class="hint">Full JSON contains your private checklist, comments and progress. Keep it private.</p>
-            <div class="footerBtns">
-              <button id="exportJson" class="btnGood" type="button">Full JSON</button>
-              <button id="exportCsv" class="btnBlue" type="button">CSV</button>
-            </div>
-            <div class="sep"></div>
-            <button id="exportConfig" class="fullWidth" type="button">Config only JSON</button>
-            <p class="hint">Config only = checklist/settings, without daily comments.</p>
-          </div>
-
-          <div class="card">
-            <h2>Import JSON file</h2>
-            <p class="hint">Import full backup JSON or config-only JSON.</p>
-            <input id="importFile" class="fileInput" type="file" accept=".json,application/json">
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Import by paste</h2>
-          <p class="hint">On iPhone you can copy JSON text and paste it here. Useful after update or reinstall.</p>
-          <textarea id="pasteImport" class="mono" placeholder="Paste JSON here, then press Import pasted JSON"></textarea>
-          <div class="footerBtns topSpace">
-            <button id="importPasted" class="btnGood" type="button">Import pasted JSON</button>
-            <button id="clearPaste" type="button">Clear</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Prompt for ChatGPT analysis</h2>
-          <textarea readonly class="promptBox">Analyze my Life Tracker JSON:
-1) what works and what fails;
-2) connection between sleep/stress/energy and execution;
-3) improve the habit system using: obvious, attractive, easy, satisfying;
-4) propose next week's checklist;
-5) propose improvements to this app.</textarea>
-        </div>
-      </section>
-
-      <section id="tab-settings" class="hidden">
-        <div class="card">
-          <div class="sectionTitle">
-            <h2>Checklist settings</h2>
-            <button id="addHabit" class="btnGood" type="button">+ Add</button>
-          </div>
-
-          <div id="settingsList" class="settingsList"></div>
-
-          <div class="sep"></div>
-          <div class="footerBtns">
-            <button id="resetDefaults" class="btnBad" type="button">Reset public defaults</button>
-            <button id="forceUpdate" class="btnWarn" type="button">Reload app update</button>
-          </div>
-          <p class="hint">Before update: Export → Full JSON. Same URL/domain should keep local data.</p>
-        </div>
-
-        <div class="card">
-          <h2>Privacy rule</h2>
-          <div class="quote">Public GitHub = app code only. Private checklist/progress = local phone storage + exported JSON.</div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <div id="helpModal" class="modal hidden">
-    <div class="modalContent">
-      <div class="top">
-        <h2>How to use</h2>
-        <button id="closeHelp" type="button">Close</button>
-      </div>
-      <ol>
-        <li>Upload this public-safe app to GitHub Pages.</li>
-        <li>Open it on iPhone in Safari and Add to Home Screen.</li>
-        <li>Edit your private checklist inside the app on the phone.</li>
-        <li>Export full JSON weekly as backup and for ChatGPT analysis.</li>
-        <li>If app code is updated, keep the same URL and press Settings → Reload app update.</li>
-      </ol>
-      <div class="quote">Not perfect. Not heroic. Do not miss twice.</div>
+<div class="wrap">
+  <header>
+    <div class="top">
+      <div><h1>Life Tracker</h1><div class="small">local-first · private data stays on this device</div></div>
+      <button id="helpBtn" class="btnBlue" type="button">?</button>
     </div>
-  </div>
+    <div class="dateRow"><button id="prevDay" type="button">‹</button><input id="dateInput" type="date"><button id="nextDay" type="button">›</button></div>
+    <nav class="tabs" aria-label="Main tabs">
+      <button type="button" data-tab="today" class="active">Daybook</button>
+      <button type="button" data-tab="progress">Progress</button>
+      <button type="button" data-tab="export">Export</button>
+      <button type="button" data-tab="settings">Settings</button>
+    </nav>
+  </header>
 
-  <script src="./app.js?v=3" defer></script>
+  <main>
+    <section id="tab-today">
+      <div class="card">
+        <div class="sectionTitle"><h2>Day</h2><span id="dayScorePill" class="pill">0 done</span></div>
+        <div class="metrics">
+          <div class="metricBox metricPrimary"><label for="general">General 0–5</label><input id="general" type="number" inputmode="decimal" min="0" max="5" step="0.1" placeholder="3.5"></div>
+          <div class="metricBox"><label for="sleep">Sleep</label><input id="sleep" type="number" inputmode="decimal" min="0" max="16" step="0.5" placeholder="7.5"></div>
+          <div class="metricBox"><label for="energy">Energy 1–5</label><input id="energy" type="number" inputmode="numeric" min="1" max="5" placeholder="3"></div>
+          <div class="metricBox"><label for="stress">Stress 1–5</label><input id="stress" type="number" inputmode="numeric" min="1" max="5" placeholder="3"></div>
+          <div class="metricBox hidden" aria-hidden="true"><label for="body">Legacy Body / metric</label><input id="body" type="text" tabindex="-1"></div>
+        </div>
+        <label for="dayNote">Day note</label>
+        <textarea id="dayNote" placeholder="Narrative note for the whole day"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="sectionTitle"><h2>Life categories</h2><button id="badDayBtn" class="btnWarn" type="button">Bad day</button></div>
+        <div class="hint">Description is shown under each category. MIN / DONE and Persistent Notes open through ⓘ / 📝.</div>
+        <div id="habits"></div>
+        <div class="sep"></div>
+        <button id="saveBtn" class="btnGood fullWidth" type="button">Save day</button>
+        <div id="saveStatus" class="hint topSpace"></div>
+      </div>
+    </section>
+
+    <section id="tab-progress" class="hidden">
+      <div class="card">
+        <div class="sectionTitle"><h2>Last 7 days</h2><button id="refreshProgress" type="button">Refresh</button></div>
+        <div class="summary">
+          <div class="stat"><div class="num" id="statDone">0</div><div class="lbl">done</div></div>
+          <div class="stat"><div class="num" id="statMin">0</div><div class="lbl">min</div></div>
+          <div class="stat"><div class="num" id="statFail">0</div><div class="lbl">fail</div></div>
+          <div class="stat"><div class="num" id="statRate">0</div><div class="lbl">skip</div></div>
+        </div>
+        <div id="habitProgress"></div>
+      </div>
+      <div class="card"><h2>Auto-insights</h2><div id="autoInsights" class="hint"></div></div>
+    </section>
+
+    <section id="tab-export" class="hidden">
+      <div class="grid grid2">
+        <div class="card">
+          <h2>Export / backup</h2>
+          <p class="hint">Core JSON/CSV for application data. For photos, tags, comments and filtered export use Media / filtered export below.</p>
+          <div class="footerBtns"><button id="exportJson" class="btnGood" type="button">Full JSON</button><button id="exportCsv" class="btnBlue" type="button">CSV</button></div>
+          <div class="sep"></div><button id="exportConfig" class="fullWidth" type="button">Config only JSON</button>
+        </div>
+        <div class="card">
+          <h2>Import JSON file</h2>
+          <p class="hint">Imports legacy v3 full JSON or current v4 JSON. Existing local data can be merged or replaced.</p>
+          <input id="importFile" class="fileInput" type="file" accept=".json,application/json">
+        </div>
+      </div>
+      <div class="card"><h2>Import by paste</h2><textarea id="pasteImport" class="mono" placeholder="Paste JSON here, then press Import pasted JSON"></textarea><div class="footerBtns topSpace"><button id="importPasted" class="btnGood" type="button">Import pasted JSON</button><button id="clearPaste" type="button">Clear</button></div></div>
+      <div class="card"><h2>Migration safety</h2><div class="quote">Legacy lifeTrackerData.v3 is preserved during migration/import; daily history is not deleted by schema migration.</div></div>
+    </section>
+
+    <section id="tab-settings" class="hidden">
+      <div class="card">
+        <div class="sectionTitle"><h2>Category definitions</h2><button id="addHabit" class="btnGood" type="button">+ Add</button></div>
+        <p class="hint">Definitions are dated. Current definitions are shown first; older definitions remain for historical dates. Start/end dates are under “Validity / history settings”.</p>
+        <div id="settingsList" class="settingsList"></div>
+        <div class="sep"></div>
+        <div class="footerBtns"><button id="resetDefaults" class="btnBad" type="button">Reset current v4 defaults</button><button id="forceUpdate" class="btnWarn" type="button">Reload app update</button></div>
+        <p class="hint">Persistent Notes are intentionally compact here; the large editor is in Daybook → category details.</p>
+      </div>
+      <div class="card"><h2>Privacy rule</h2><div class="quote">Public GitHub = app code only. Private checklist/progress/photos = local device storage + exported backups.</div></div>
+    </section>
+  </main>
+</div>
+
+<div id="helpModal" class="modal hidden"><div class="modalContent"><div class="top"><h2>How to use</h2><button id="closeHelp" type="button">Close</button></div><ol><li>Daybook = daily rating, Day note, plan, Photo journal and categories.</li><li>Description is visible on the card; MIN / DONE and large Persistent Notes open through ⓘ / 📝.</li><li>Calendar navigates through Life Tracker dates.</li><li>Media export filters photos by period/tag and can save a manifest for future collages/videos.</li></ol></div></div>
+
+<div id="habitDetailModal" class="modal hidden"><div class="modalContent"><div class="top"><div><h2 id="habitDetailTitle">Category</h2><div id="habitDetailDate" class="small"></div></div><button id="closeHabitDetail" type="button">Close</button></div><p id="habitDetailDescription" class="hint"></p><label>MIN</label><div id="habitDetailMin" class="quote"></div><label>DONE</label><div id="habitDetailDone" class="quote"></div><label for="habitContextNotes">Persistent topic Notes / Context</label><textarea id="habitContextNotes" placeholder="Principles, strategy, reference notes, checklists..."></textarea><label for="habitDailyNotes" class="hidden">Extended note for this day</label><textarea id="habitDailyNotes" class="hidden" aria-hidden="true"></textarea><button id="saveHabitDetail" class="btnGood fullWidth topSpace" type="button">Save notes</button></div></div>
+
+<script src="./migration-v4.js?v=16" defer></script>
+<script src="./daybook.js?v=16" defer></script>
+<script src="./compatibility.js?v=16" defer></script>
+<script src="./app-v4.js?v=16" defer></script>
+<script src="./progress.js?v=16" defer></script>
+<script src="./media.js?v=16" defer></script>
+<script src="./text-export.js?v=16" defer></script>
+<script src="./progress-summary.js?v=16" defer></script>
+<script src="./interface.js?v=16" defer></script>
+<script src="./settings-relations.js?v=16" defer></script>
 </body>
 </html>
